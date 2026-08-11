@@ -1,0 +1,33 @@
+{
+  "name": "eleven-sound-in-cc",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Claude Code plugin that wraps the ElevenLabs Sound Effects API as slash commands with agent-routed dispatch — duration/loop decided per sound type, WAV output with tier-aware fallback.",
+  "license": "Apache-2.0",
+  "author": "gmlxo76",
+  "homepage": "https://github.com/gmlxo76/eleven-sound-in-cc#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gmlxo76/eleven-sound-in-cc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gmlxo76/eleven-sound-in-cc/issues"
+  },
+  "keywords": [
+    "elevenlabs",
+    "sound-effects",
+    "sfx",
+    "audio-generation",
+    "claude-code",
+    "claude-code-plugin",
+    "game-audio"
+  ],
+  "scripts": {
+    "status": "node scripts/eleven-sound.mjs status",
+    "test": "node --test tests/*.test.mjs",
+    "validate:plugin": "claude plugin validate ."
+  },
+  "engines": {
+    "node": ">=18.18"
+  }
+}

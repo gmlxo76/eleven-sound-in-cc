@@ -1,0 +1,4 @@
+node_modules/
+eleven-sounds/
+*.log
+.DS_Store

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 — 2026-08-11
+
+- Fix: replace every post-fetch `process.exit()` with `process.exitCode` + natural drain — exiting while undici keep-alive sockets were closing crashed Node on Windows (`uv async.c` assertion), turning successful runs into exit 127.
+- `status`: surface the API error body's `detail.message` on a failed key check (e.g. the "API key ID used as API key" case) instead of a generic hint.
+- `sfx`: 400/401 error hint now explains that real keys start with `sk_` and are shown only once at creation — the hex ID in the key list is not the key.
+
 ## 0.1.0 — 2026-08-11
 
 Initial release.

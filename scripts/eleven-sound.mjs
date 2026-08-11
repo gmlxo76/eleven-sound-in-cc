@@ -75,25 +75,26 @@ export function resolveKey() {
 async function cmdConfigShow() {
   const { key, source } = resolveKey();
   process.stdout.write(`source: ${source}\nkey: ${maskKey(key)}\n`);
-  process.exit(0);
+  process.exitCode = 0;
 }
 
 async function cmdConfigSet(args) {
   const key = (args[0] || "").trim();
   if (!key) {
     process.stderr.write("Usage: config-set <api-key>\n");
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   writeConfigFile({ elevenlabs_api_key: key, saved_at: new Date().toISOString() });
   process.stdout.write(`saved\nkey: ${maskKey(key)}\nfile: ${configFile()}\n`);
-  process.exit(0);
+  process.exitCode = 0;
 }
 
 async function cmdConfigClear() {
   const f = configFile();
   if (existsSync(f)) rmSync(f);
   process.stdout.write(`cleared\nfile: ${f}\n`);
-  process.exit(0);
+  process.exitCode = 0;
 }
 
 // ---- status ---------------------------------------------------------------
@@ -133,14 +134,19 @@ async function cmdStatus() {
           lines.push(`Credits:        ${sub.character_count} / ${sub.character_limit} used`);
         }
       } else {
-        lines.push(`API check:      FAILED (HTTP ${res.status}) — key may be invalid or revoked`);
+        let hint = "key may be invalid or revoked";
+        try {
+          const err = await res.json();
+          if (err?.detail?.message) hint = err.detail.message;
+        } catch { /* keep generic hint */ }
+        lines.push(`API check:      FAILED (HTTP ${res.status}) — ${hint}`);
       }
     } catch (e) {
       lines.push(`API check:      skipped (network: ${e.message})`);
     }
   }
   process.stdout.write(lines.join("\n") + "\n");
-  process.exit(0);
+  process.exitCode = 0;
 }
 
 // ---- WAV utilities ---------------------------------------------------------
@@ -376,18 +382,22 @@ export class HttpError extends Error {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// Sets process.exitCode instead of calling process.exit() — exiting while
+// undici keep-alive sockets are still closing crashes Node on Windows
+// (uv async.c assertion), which turns successful runs into exit 127.
 function exitForHttpError(err) {
   if (!(err instanceof HttpError)) {
     process.stderr.write(`${err.message}\n`);
-    process.exit(99);
+    process.exitCode = 99;
+    return;
   }
   const map = { 401: 2, 403: 2, 400: 3, 422: 4, 429: 5, 500: 5, 0: 6 };
   const code = map[err.status] ?? 99;
   process.stderr.write(`HTTP ${err.status}: ${err.body}\n`);
-  if (err.status === 401) {
-    process.stderr.write("Key rejected. Re-check it at elevenlabs.io → Profile → API Keys, then run config-set.\n");
+  if (err.status === 401 || err.status === 400) {
+    process.stderr.write("Key rejected. Real ElevenLabs keys start with 'sk_' and are shown ONCE at creation — the hex ID in the key list is NOT the key. Create/rotate at elevenlabs.io → API Keys, then run config-set.\n");
   }
-  process.exit(code);
+  process.exitCode = code;
 }
 
 /** One sound-generation call. Returns raw audio bytes for the given output_format. */
@@ -443,12 +453,14 @@ async function cmdSfx(argv) {
   const text = positional.join(" ").trim();
   if (!text) {
     process.stderr.write("sfx: <text prompt> required\n");
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const { key } = resolveKey();
   if (!key) {
     process.stderr.write("no API key. Run config-set <key> or set ELEVENLABS_API_KEY.\n");
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   let duration, influence;
@@ -457,14 +469,16 @@ async function cmdSfx(argv) {
     influence = validateInfluence(flags.influence);
   } catch (e) {
     process.stderr.write(`${e.message}\n`);
-    process.exit(4);
+    process.exitCode = 4;
+    return;
   }
   const loop = !!flags.loop;
   const count = Math.max(1, Math.min(10, parseInt(flags.count || "1", 10) || 1));
   const format = String(flags.format || "wav").toLowerCase();
   if (format !== "wav" && format !== "mp3") {
     process.stderr.write(`--format ${format} unsupported (wav | mp3)\n`);
-    process.exit(4);
+    process.exitCode = 4;
+    return;
   }
 
   const body = {
@@ -526,6 +540,7 @@ async function cmdSfx(argv) {
     }
   } catch (e) {
     exitForHttpError(e);
+    return;
   }
 
   // Seamless loops must keep their exact length — trimming breaks the loop point.
@@ -536,7 +551,7 @@ async function cmdSfx(argv) {
   } else {
     applyAutoTrim(saved, flags);
   }
-  process.exit(0);
+  process.exitCode = 0;
 }
 
 // ---- trim-silence (explicit one-off) ------------------------------------------
@@ -546,7 +561,8 @@ async function cmdTrimSilence(argv) {
   const input = positional[0];
   if (!input || !existsSync(input)) {
     process.stderr.write("trim-silence: <input.wav> required (file not found)\n");
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const thresholdDb = parseFloat(flags["threshold-db"] || "-60");
   const tailMs = parseInt(flags["tail-ms"] || "50", 10);
@@ -556,7 +572,8 @@ async function cmdTrimSilence(argv) {
   try { buf = readFileSync(input); }
   catch (e) {
     process.stderr.write(`read failed: ${e.message}\n`);
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   let trimmed;
   try {
@@ -564,7 +581,8 @@ async function cmdTrimSilence(argv) {
   } catch (e) {
     if (e instanceof UnsupportedFormatError) {
       process.stderr.write(`unsupported WAV: ${e.message}\n`);
-      process.exit(8);
+      process.exitCode = 8;
+      return;
     }
     throw e;
   }
@@ -576,7 +594,7 @@ async function cmdTrimSilence(argv) {
     process.stdout.write(`NO-OP: nothing to trim (already tight)\n`);
   }
   process.stdout.write(`SAVED: ${pathResolve(outPath)}\n`);
-  process.exit(0);
+  process.exitCode = 0;
 }
 
 // ---- main ----------------------------------------------------------------------
@@ -632,6 +650,6 @@ if (isMain) {
   }
   handler(process.argv.slice(3)).catch(e => {
     process.stderr.write(`${e.stack || e.message}\n`);
-    process.exit(99);
+    process.exitCode = 99;
   });
 }

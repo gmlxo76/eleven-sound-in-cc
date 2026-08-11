@@ -36,7 +36,7 @@ The API accepts `duration_seconds` 0.5–30 (omit = model picks a natural length
 | Voice-like grunt / monster vocal | 1.0–2.0 | no | natural phrasing, still explicit |
 
 Rules of thumb:
-- **ALWAYS pass an explicit `--duration`** (verified in practice): omitting it makes the model fill ~4 seconds even for a quick slash, and auto-trim can't rescue it when the tail has steady content above the -60 dBFS gate. Auto-length is a trap for one-shots.
+- **ALWAYS pass an explicit `--duration`** (verified in practice): omitting it makes the model fill ~2 seconds even for a quick slash — 2-3× too long for a fast one-shot — and auto-trim can't rescue it when the tail has steady content above the -60 dBFS gate. Auto-length is a trap for one-shots.
 - **Anything the game holds for an indeterminate time = `--loop`.** Loops need *steady-state* sound: describe a continuous texture ("continuous", "steady", "sustained") and avoid distinct attack/impact words, or the loop point will be audible.
 - Loop + duration: give loops an explicit duration (2–4s for effects, 10–20s for ambience) so the file size fits its use.
 - Announce your decision in one line before dispatching, e.g. *"차징 유지음이니 3초 시머리스 루프로 생성합니다."*

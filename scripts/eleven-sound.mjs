@@ -17,8 +17,9 @@
                        model_id (only eleven_text_to_sound_v2)
     - query:           output_format — pcm_44100 needs Pro+, mp3_44100_192 needs
                        Creator+; mp3_44100_128 available on all tiers.
-    - PCM responses are raw mono 16-bit little-endian samples (no header) —
-      this dispatcher wraps them into a canonical 44-byte RIFF/WAVE header.
+    - PCM responses are raw 16-bit little-endian samples (no header). For
+      sound-generation they are STEREO interleaved — this dispatcher wraps
+      them into a canonical 44-byte RIFF/WAVE header as 2-channel audio.
 */
 
 import { mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, chmodSync } from "node:fs";
@@ -524,7 +525,11 @@ async function cmdSfx(argv) {
       let bytes = audio;
       if (kind === "pcm") {
         const rate = parseInt(fmt.split("_")[1], 10);
-        bytes = wrapPcmToWav(audio, rate, 1);
+        // sound-generation PCM is STEREO interleaved s16le (verified: requested
+        // duration matches at 2ch, and even/odd sample correlation ≈ 0.999).
+        // Truncate to whole stereo frames before wrapping.
+        const whole = audio.length - (audio.length % 4);
+        bytes = wrapPcmToWav(whole === audio.length ? audio : audio.slice(0, whole), rate, 2);
         if (extname(outPath).toLowerCase() !== ".wav") outPath = swapExt(outPath, ".wav");
       } else if (extname(outPath).toLowerCase() !== ".mp3") {
         outPath = swapExt(outPath, ".mp3");

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3 — 2026-08-11
+
+- Fix: sound-generation PCM responses are **stereo interleaved** s16le, not mono — files were wrapped with a mono header, doubling the apparent duration and garbling channels. Verified via even/odd sample correlation (≈0.999) and exact 2× duration vs `duration_seconds`. Now wrapped as 2-channel, truncated to whole stereo frames.
+- Docs: auto-length actually fills ~2s (was reported as ~4s under the mono-header bug) — still 2-3× too long for fast one-shots; explicit `--duration` guidance stands.
+
 ## 0.1.2 — 2026-08-11
 
 - `create` skill: **always require an explicit `--duration`** — omitting it makes the model fill ~4 seconds even for a quick melee slash (verified generating katana one-shots), and auto-trim can't rescue tails with steady content above the -60 dBFS gate. Decision table updated with explicit ranges.

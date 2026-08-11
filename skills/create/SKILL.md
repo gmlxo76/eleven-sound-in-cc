@@ -26,17 +26,17 @@ The API accepts `duration_seconds` 0.5–30 (omit = model picks a natural length
 | Sound type | Duration | Loop | Reasoning |
 |---|---|---|---|
 | UI click / beep / pickup | 0.5–1.0 | no | one-shot, tight |
-| Single gunshot / melee swing / whoosh / impact / footstep | **omit** (auto) or 1.0–1.5 | no | model picks natural attack+tail |
+| Single gunshot / melee swing / whoosh / impact / footstep | 0.6–1.5 | no | fast one-shot — explicit, short |
 | Reload / mechanical action (bolt, pump, latch) | 1.0–2.0 | no | multi-stage but finite |
 | Explosion / shell impact (with debris tail) | 2.0–3.0 | no | needs decay room |
 | Skill charge-up / channeling / beam / aura hold | 2.0–4.0 | **yes** | held for unknown time in-game → seamless loop |
 | Alarm / siren / warning pulse | 2.0–4.0 | **yes** | repeats until dismissed |
 | Ambience (rain, wind, room tone, crowd, machinery hum) | 10–20 | **yes** | long bed, loops in-engine |
 | Stinger / jingle / result fanfare | 2.0–4.0 | no | musical one-shot |
-| Voice-like grunt / monster vocal | **omit** (auto) | no | natural phrasing |
+| Voice-like grunt / monster vocal | 1.0–2.0 | no | natural phrasing, still explicit |
 
 Rules of thumb:
-- **When unsure for a one-shot: omit `--duration`** — the model picks a natural length, and auto-trim cleans the tail.
+- **ALWAYS pass an explicit `--duration`** (verified in practice): omitting it makes the model fill ~4 seconds even for a quick slash, and auto-trim can't rescue it when the tail has steady content above the -60 dBFS gate. Auto-length is a trap for one-shots.
 - **Anything the game holds for an indeterminate time = `--loop`.** Loops need *steady-state* sound: describe a continuous texture ("continuous", "steady", "sustained") and avoid distinct attack/impact words, or the loop point will be audible.
 - Loop + duration: give loops an explicit duration (2–4s for effects, 10–20s for ambience) so the file size fits its use.
 - Announce your decision in one line before dispatching, e.g. *"차징 유지음이니 3초 시머리스 루프로 생성합니다."*

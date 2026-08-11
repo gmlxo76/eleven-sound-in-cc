@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Claude Code plugin that wraps the ElevenLabs Sound Effects API (v1/sound-generation) — text → game-ready SFX with agent-decided duration, seamless looping, prompt-influence, variations, and WAV output with tier-aware format fallback.",
-    "version": "0.1.1"
+    "version": "0.1.2"
   },
   "plugins": [
     {
       "name": "eleven-sound",
       "source": "./",
       "description": "/eleven-sound:status, :config, :create, :trim — text → SFX via ElevenLabs. The create skill decides duration (0.5–30s or auto) and looping per sound type, writes realism-anchored prompts, and saves WAV (PCM) with automatic tier fallback to MP3.",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "tags": ["elevenlabs", "sfx", "sound", "audio-generation", "claude-code", "game-audio"],
       "category": "productivity"
     }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2 — 2026-08-11
+
+- `create` skill: **always require an explicit `--duration`** — omitting it makes the model fill ~4 seconds even for a quick melee slash (verified generating katana one-shots), and auto-trim can't rescue tails with steady content above the -60 dBFS gate. Decision table updated with explicit ranges.
+
 ## 0.1.1 — 2026-08-11
 
 - Fix: replace every post-fetch `process.exit()` with `process.exitCode` + natural drain — exiting while undici keep-alive sockets were closing crashed Node on Windows (`uv async.c` assertion), turning successful runs into exit 127.
